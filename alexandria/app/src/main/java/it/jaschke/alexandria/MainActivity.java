@@ -160,9 +160,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         }
     }
 
-    public void goBack(View view){
-        getSupportFragmentManager().popBackStack();
-    }
+
 
     private boolean isTablet() {
         return (getApplicationContext().getResources().getConfiguration().screenLayout

@@ -42,7 +42,6 @@
             android:name=".services.BookService"
             android:exported="false"></service>
 
-        <activity android:name=".BarCodeScannerActivity"></activity>
     </application>
 
 </manifest>

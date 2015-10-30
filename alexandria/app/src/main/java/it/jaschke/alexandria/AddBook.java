@@ -21,10 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import it.jaschke.alexandria.data.AlexandriaContract;
 import it.jaschke.alexandria.services.BookService;
 import it.jaschke.alexandria.services.DownloadImage;
-import me.dm7.barcodescanner.zbar.ZBarScannerView;
 
 
 public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -99,7 +101,7 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 // are using an external app.
                 //when you're done, remove the toast below.
 
-                startActivityForResult(new Intent(getActivity(), BarCodeScannerActivity.class), REQUEST_CODE);
+                IntentIntegrator.forSupportFragment(AddBook.this).initiateScan();
 
 
             }
@@ -167,9 +169,15 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         ((TextView) rootView.findViewById(R.id.bookSubTitle)).setText(bookSubTitle);
 
         String authors = data.getString(data.getColumnIndex(AlexandriaContract.AuthorEntry.AUTHOR));
-        String[] authorsArr = authors.split(",");
-        ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
-        ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
+
+        if (authors != null && authors.contains(",")) {
+            String[] authorsArr = authors.split(",");
+            ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
+            ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
+        } else if (authors != null) {
+            ((TextView) rootView.findViewById(R.id.authors)).setText(authors);
+        }
+
         String imgUrl = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
         if (Patterns.WEB_URL.matcher(imgUrl).matches()) {
             new DownloadImage((ImageView) rootView.findViewById(R.id.bookCover)).execute(imgUrl);
@@ -208,15 +216,15 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == REQUEST_CODE) {
-            // Make sure the request was successful
-            if (resultCode == getActivity().RESULT_OK) {
-                // The user picked a contact.
-                // The Intent's data Uri identifies which contact was selected.
-                Log.v("request result", data.getExtras().getString(BarCodeScannerActivity.ISBN));
-                ean.setText(data.getExtras().getString(BarCodeScannerActivity.ISBN));
-                // Do something with the contact here (bigger example below)
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            if (result.getContents() == null) {
+                Toast.makeText(getActivity(), R.string.error_msg_cannot_scan, Toast.LENGTH_SHORT).show();
+            } else {
+                ean.setText(result.getContents());
+
             }
+
         }
     }
 }
